@@ -1,2 +1,2 @@
-Музыка для BOOM.
-Исходники взяты с http://elm-chan.org/works/sd8p/report.html
+п»їРњСѓР·С‹РєР° РґР»СЏ BOOM.
+РСЃС…РѕРґРЅРёРєРё РІР·СЏС‚С‹ СЃ http://elm-chan.org/works/sd8p/report.html

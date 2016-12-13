@@ -261,19 +261,10 @@ int main (void)
 				while (res == FR_OK) {				/* Play all wav files in the dir */
 					wdt_reset();
 					res = pf_readdir(&Dir, &Fno);		/* Get a dir entry */
-
 					if (res || !Fno.fname[0]) break;	/* Break on error or end of dir */
-
-					if (!(Fno.fattrib & (AM_DIR|AM_HID)) && strstr(Fno.fname, ".WAV")) {
+					if (!(Fno.fattrib & (AM_DIR|AM_HID)) && strstr(Fno.fname, ".WAV"))
 						res = play(dir, Fno.fname);		/* Play file */
-						if (res == FR_OK)				/* Если файл был проигран, установим флаг окончания*/
-							res = FR_END;
-					}
 				}
-			}
-
-			while (res == FR_END) {						/* Если файл уже проигран, МК больше ничего не делает. */
-				wdt_reset();
 			}
 		}
 		delay500();			/* Delay 500ms in low power sleep mode */
