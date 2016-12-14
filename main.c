@@ -61,7 +61,7 @@ FILINFO Fno;		/* File information */
 
 WORD rb;			/* Return value. Put this here to avoid avr-gcc's bug */
 
-STEP step = STEP_WAIT;
+STEP step = STEP_GAME;
 
 
 
@@ -271,34 +271,31 @@ int main (void)
 //				res = pf_opendir(&Dir, dir = "");	/* Open root directory */
 
 
-
+			strcpy_P((char*) Fno.fname, PSTR("1.wav"));
 			while (res == FR_OK) {					/* Repeat in the dir */
 				if (step != STEP_WAIT) {
 					res = play(dir, Fno.fname);
-				}
-
-				if ((PINB & 1) == 0) {
-					switch(step) {
-						case STEP_WAIT:
-							strcpy_P((char*) Fno.fname, PSTR("1.wav"));
-							step = STEP_GAME;
-							break;
-						case STEP_GAME:
-							strcpy_P((char*) Fno.fname, PSTR("2.wav"));
-							step = STEP_TIME_STOP;
-							break;
-						case STEP_TIME_STOP:
-							strcpy_P((char*) Fno.fname, PSTR("3.wav"));
-							step = STEP_TIME_END;
-							break;
-						case STEP_TIME_END:
-							step = STEP_WAIT;
-							break;
+					if ((PINB & 1) == 0) {
+						switch(step) {
+							case STEP_GAME:
+								strcpy_P((char*) Fno.fname, PSTR("2.wav"));
+								step = STEP_TIME_STOP;
+								break;
+							case STEP_TIME_STOP:
+								strcpy_P((char*) Fno.fname, PSTR("3.wav"));
+								step = STEP_TIME_END;
+								break;
+							case STEP_TIME_END:
+								step = STEP_WAIT;
+								break;
+							case STEP_WAIT:
+								break;
+						}
+						wdt_reset();
+						delay_us(50000);
+						wdt_reset();
+						delay_us(50000);
 					}
-					wdt_reset();
-					delay_us(50000);
-					wdt_reset();
-					delay_us(50000);
 				}
 
 
