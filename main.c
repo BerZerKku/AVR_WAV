@@ -39,6 +39,12 @@ and use these values to program the fuse bits. */
 
 void delay_us (WORD);	/* Defined in asmfunc.S */
 
+typedef enum {
+	STEP_WAIT,
+	STEP_GAME,
+	STEP_TIME_STOP,
+	STEP_TIME_END
+} STEP;
 
 
 /*---------------------------------------------------------*/
@@ -54,6 +60,8 @@ DIR Dir;			/* Directory object */
 FILINFO Fno;		/* File information */
 
 WORD rb;			/* Return value. Put this here to avoid avr-gcc's bug */
+
+STEP step = STEP_WAIT;
 
 
 
@@ -187,11 +195,17 @@ FRESULT play (
 
 			btr = (sz > 1024) ? 1024 : (WORD)sz;/* A chunk of audio data */
 			res = pf_read(0, btr, &rb);	/* Forward the data into audio FIFO */
-			if (rb != 1024) break;		/* Break on error or end of data */
+			if (rb != 1024) {
+				if (step != STEP_GAME)
+					step = STEP_WAIT;
+				break;		/* Break on error or end of data */
+			}
 			sz -= rb;					/* Decrease data counter */
 
 			sw <<= 1;					/* Break on button down */
 		} while ((PINB & 1) || ++sw != 1);
+
+
 	}
 
 	while (FifoCt) ;			/* Wait for audio FIFO empty */
@@ -253,18 +267,49 @@ int main (void)
 			OSCCAL = org_osc + Buff[0];
 
 			res = pf_opendir(&Dir, dir = "wav");	/* Open sound file directory */
-			if (res == FR_NO_PATH)
-				res = pf_opendir(&Dir, dir = "");	/* Open root directory */
+//			if (res == FR_NO_PATH)
+//				res = pf_opendir(&Dir, dir = "");	/* Open root directory */
 
-			while (res == FR_OK) {				/* Repeat in the dir */
-				res = pf_readdir(&Dir, 0);			/* Rewind dir */
-				while (res == FR_OK) {				/* Play all wav files in the dir */
-					wdt_reset();
-					res = pf_readdir(&Dir, &Fno);		/* Get a dir entry */
-					if (res || !Fno.fname[0]) break;	/* Break on error or end of dir */
-					if (!(Fno.fattrib & (AM_DIR|AM_HID)) && strstr(Fno.fname, ".WAV"))
-						res = play(dir, Fno.fname);		/* Play file */
+
+
+			while (res == FR_OK) {					/* Repeat in the dir */
+				if (step != STEP_WAIT) {
+					res = play(dir, Fno.fname);
 				}
+
+				if ((PINB & 1) == 0) {
+					switch(step) {
+						case STEP_WAIT:
+							strcpy_P((char*) Fno.fname, PSTR("1.wav"));
+							step = STEP_GAME;
+							break;
+						case STEP_GAME:
+							strcpy_P((char*) Fno.fname, PSTR("2.wav"));
+							step = STEP_TIME_STOP;
+							break;
+						case STEP_TIME_STOP:
+							strcpy_P((char*) Fno.fname, PSTR("3.wav"));
+							step = STEP_TIME_END;
+							break;
+						case STEP_TIME_END:
+							step = STEP_WAIT;
+							break;
+					}
+					wdt_reset();
+					delay_us(50000);
+					wdt_reset();
+					delay_us(50000);
+				}
+
+
+//				res = pf_readdir(&Dir, 0);			/* Rewind dir */
+//				while (res == FR_OK) {				/* Play all wav files in the dir */
+				wdt_reset();
+//					res = pf_readdir(&Dir, &Fno);		/* Get a dir entry */
+//					if (res || !Fno.fname[0]) break;	/* Break on error or end of dir */
+//					if (!(Fno.fattrib & (AM_DIR|AM_HID)) && strstr(Fno.fname, ".WAV"))
+//						res = play(dir, Fno.fname);		/* Play file */
+//				}
 			}
 		}
 		delay500();			/* Delay 500ms in low power sleep mode */
