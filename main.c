@@ -275,26 +275,29 @@ int main (void)
 			while (res == FR_OK) {					/* Repeat in the dir */
 				if (step != STEP_WAIT) {
 					res = play(dir, Fno.fname);
+
 					if ((PINB & 1) == 0) {
-						switch(step) {
-							case STEP_GAME:
-								strcpy_P((char*) Fno.fname, PSTR("2.wav"));
-								step = STEP_TIME_STOP;
-								break;
-							case STEP_TIME_STOP:
+						if (step == STEP_GAME) {
+							// Дожидаемся окончания нажатия кнопки
+							while((PINB & 1) == 0);
+
+							// ждем 100 мс и повторно проверяем кнопку
+							wdt_reset();
+							delay_ms(50);
+							wdt_reset();
+							delay_ms(50);
+							wdt_reset();
+
+							// если обнаружено еще одно нажатие, то файл 3
+							// если нажатий больеш небыло, то файл 2
+							if ((PINB & 1) == 0) {
 								strcpy_P((char*) Fno.fname, PSTR("3.wav"));
 								step = STEP_TIME_END;
-								break;
-							case STEP_TIME_END:
-								step = STEP_WAIT;
-								break;
-							case STEP_WAIT:
-								break;
+							} else {
+								strcpy_P((char*) Fno.fname, PSTR("2.wav"));
+								step = STEP_TIME_STOP;
+							}
 						}
-						wdt_reset();
-						delay_us(50000);
-						wdt_reset();
-						delay_us(50000);
 					}
 				}
 
